@@ -1,11 +1,19 @@
 apiVersion: 1
 
 providers:
-  - name: 'SysFlow Logs'
+  - name: 'default'
     orgId: 1
     folder: ''
     type: file
     disableDeletion: false
-    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
     options:
       path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
+    # Lista de dashboards
+    dashboards:
+      - name: 'sysflow-logs-dashboard'
+        path: '/etc/grafana/provisioning/dashboards/sysflow-logs-dashboard.json'
+      - name: 'sysflow-metrics-dashboard'
+        path: '/etc/grafana/provisioning/dashboards/sysflow-metrics-dashboard.json'
