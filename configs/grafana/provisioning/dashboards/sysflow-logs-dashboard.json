@@ -184,10 +184,7 @@
         "multi": true,
         "name": "level",
         "options": [],
-        "query": {
-          "query": "label_values({job=~\"$job\"}, level)",
-          "refId": "A"
-        },
+	"query": "label_values(level)",
         "queryType": "labelValues",
         "refresh": 1,
         "regex": "",
