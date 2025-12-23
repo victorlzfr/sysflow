@@ -82,3 +82,7 @@ Para monitorar uma nova aplicação:
 - Backup e restore automatizado
 
 - Monitoramento de banco de dados TimescaleDB
+
+- Agente escrito em Go
+
+- API em Python/FastAPI
