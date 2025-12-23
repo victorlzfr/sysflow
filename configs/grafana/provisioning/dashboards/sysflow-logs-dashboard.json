@@ -1,4 +1,5 @@
 {
+  "uid": "sysflow-logs",
   "title": "SysFlow Logs Dashboard",
   "tags": [
     "sysflow",
