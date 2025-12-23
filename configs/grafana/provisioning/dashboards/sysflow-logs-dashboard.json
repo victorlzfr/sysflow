@@ -1,0 +1,198 @@
+{
+  "uid": "sysflow-logs",
+  "title": "SysFlow Logs Dashboard",
+  "tags": [
+    "sysflow",
+    "logs",
+    "monitoring"
+  ],
+  "style": "dark",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 3,
+      "type": "row",
+      "title": "Filters",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "panels": [],
+      "collapsed": true
+    },
+    {
+      "id": 1,
+      "title": "SysFlow Application Logs",
+      "type": "logs",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "{job=~\"$job\", level=~\"$level\"}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "showLabels": false,
+        "enableLogDetails": true
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Log Rate - All Sources",
+      "type": "timeseries",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "rate({job=~\"$job\", level=~\"$level\"}[5m])",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      }
+    },
+    {
+      "id": 4,
+      "title": "SysFlow Log Rate",
+      "type": "timeseries",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "rate({job=\"sysflow\"}[5m])",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      }
+    },
+    {
+      "id": 5,
+      "title": "Log Count by Level",
+      "type": "bargauge",
+      "datasource": "Loki",
+      "targets": [
+        {
+          "expr": "count_over_time({job=~\"$job\", level=~\"$level\"}[5m])",
+          "refId": "A"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 21
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "text": {}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    }
+  ],
+  "time": {
+    "from": "now-4h",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Job",
+        "multi": true,
+        "name": "job",
+        "options": [
+          {
+            "selected": true,
+            "text": "sysflow",
+            "value": "sysflow"
+          },
+          {
+            "selected": false,
+            "text": "varlogs",
+            "value": "varlogs"
+          },
+          {
+            "selected": false,
+            "text": "containerlogs",
+            "value": "containerlogs"
+          }
+        ],
+        "query": "sysflow,varlogs,containerlogs",
+        "type": "custom",
+        "datasource": "Loki"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Log Level",
+        "multi": true,
+        "name": "level",
+        "options": [],
+	"query": "label_values(level)",
+        "queryType": "labelValues",
+        "refresh": 1,
+        "regex": "",
+        "sort": 1,
+        "type": "query",
+        "datasource": "Loki"
+      }
+    ]
+  }
+}

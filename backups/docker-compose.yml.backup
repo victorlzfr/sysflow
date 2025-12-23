@@ -1,0 +1,44 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg16
+    container_name: sysflow-timescaledb
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=sysflow
+      - POSTGRES_USER=sysflow_admin
+      - POSTGRES_PASSWORD=${TIMESCALEDB_PASSWORD}
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # MUDADO: 5433 externo, 5432 interno
+    networks:
+      - sysflow-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: sysflow-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - sysflow-network
+
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    container_name: sysflow-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    ports:
+      - "3000:3000"
+    networks:
+      - sysflow-network
+
+networks:
+  sysflow-network:
+    driver: bridge
+
+volumes:
+  timescaledb_data:
