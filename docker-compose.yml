@@ -1,4 +1,6 @@
+# docker-compose.yml 
 services:
+  # Banco de dados principal (métricas de longo prazo/status)
   timescaledb:
     image: timescale/timescaledb-ha:pg16
     container_name: sysflow-timescaledb
@@ -10,34 +12,60 @@ services:
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"  # MUDADO: 5433 externo, 5432 interno
+      - "5433:5432"
     networks:
       - sysflow-network
 
+  # Coleta de métricas
   prometheus:
     image: prom/prometheus:latest
     container_name: sysflow-prometheus
     restart: unless-stopped
     volumes:
       - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./configs/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
     ports:
       - "9090:9090"
     networks:
       - sysflow-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.enable-lifecycle'
 
+  # Gerenciamento de alertas
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: sysflow-alertmanager
+    restart: unless-stopped
+    volumes:
+      - ./configs/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    ports:
+      - "9093:9093"
+    networks:
+      - sysflow-network
+    depends_on:
+      - prometheus
+
+  # Visualização
   grafana:
     image: grafana/grafana-enterprise:latest
     container_name: sysflow-grafana
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
     ports:
       - "3000:3000"
     volumes:
       - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
     networks:
       - sysflow-network
+    depends_on:
+      - prometheus
+      - loki
 
+  # Log aggregation
   loki:
     image: grafana/loki:2.9.0
     container_name: sysflow-loki
@@ -50,8 +78,6 @@ services:
       - loki_data:/loki
     networks:
       - sysflow-network
-    depends_on:
-      - timescaledb
 
   promtail:
     image: grafana/promtail:2.9.0
@@ -67,6 +93,51 @@ services:
     depends_on:
       - loki
 
+  # Automação/Integração
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sysflow-n8n
+    restart: unless-stopped
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin123}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_PROTOCOL=http
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_WEBHOOK_URL=http://localhost:5678/
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_MAX_AGE=168
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./configs/n8n:/etc/n8n
+    networks:
+      - sysflow-network
+
+  # Monitoramento de containers 
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: sysflow-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    ports:
+      - "8080:8080"
+    networks:
+      - sysflow-network
+
+  # Métricas de host 
   node-exporter:
     image: prom/node-exporter:latest
     container_name: sysflow-node-exporter
@@ -85,23 +156,6 @@ services:
     networks:
       - sysflow-network
 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: sysflow-cadvisor
-    restart: unless-stopped
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    devices:
-      - /dev/kmsg
-    ports:
-      - "8080:8080"
-    networks:
-      - sysflow-network
-
 networks:
   sysflow-network:
     driver: bridge
@@ -109,4 +163,5 @@ networks:
 volumes:
   timescaledb_data:
   loki_data:
-
+  grafana_data:
+  n8n_data:
