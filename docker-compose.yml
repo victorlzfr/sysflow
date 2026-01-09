@@ -111,6 +111,8 @@ services:
       - EXECUTIONS_DATA_MAX_AGE=168
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=America/Sao_Paulo
+      - N8N_METRICS=true  # Ativa o sistema de métricas
+      - N8N_METRICS_INCLUDE_DEFAULT_METRICS=true  # Expõe métricas padrão do n8n
     ports:
       - "5678:5678"
     volumes:
