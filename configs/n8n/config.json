@@ -2,11 +2,42 @@
   "executions": {
     "data": {
       "prune": true,
-      "maxAge": 168
+      "maxAge": 168,
+      "saveDataOnError": "all",
+      "saveDataOnSuccess": "all",
+      "saveDataManualExecutions": true
     }
   },
   "externalHooksFiles": "/etc/n8n/external-hooks.js",
   "generic": {
     "timezone": "America/Sao_Paulo"
+  },
+  "endpoints": {
+    "metrics": {
+      "enable": true,
+      "path": "/metrics",
+      "prefix": "n8n_",
+      "includeDefaultMetrics": true,
+      "includeApiMetrics": true,
+      "includeWebhookMetrics": true,
+      "includeWorkflowMetrics": true,
+      "includeNodeMetrics": true,
+      "includeCredentialTypeMetrics": true,
+      "includeExecutionMetrics": true
+    },
+    "rest": {
+      "enable": true
+    }
+  },
+  "logs": {
+    "level": "info",
+    "output": "console"
+  },
+  "metrics": {
+    "includeDefaultMetrics": true,
+    "includeApiMetrics": true,
+    "includeWebhookMetrics": true,
+    "includeWorkflowMetrics": true,
+    "includeNodeMetrics": true
   }
 }
