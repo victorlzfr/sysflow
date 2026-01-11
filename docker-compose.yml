@@ -99,20 +99,36 @@ services:
     container_name: sysflow-n8n
     restart: unless-stopped
     environment:
+      # Autenticação
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD:-admin123}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
+      # Segurança
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      # Configuração do servidor
       - N8N_PROTOCOL=http
       - N8N_HOST=localhost
       - N8N_PORT=5678
-      - N8N_WEBHOOK_URL=http://localhost:5678/
+      - WEBHOOK_URL=http://localhost:5678/
+      # Configuração de métricas (HABILITADAS)
+      - N8N_METRICS=true
+      - N8N_METRICS_INCLUDE_DEFAULT_METRICS=true
+      - N8N_METRICS_INCLUDE_API_METRICS=true
+      - N8N_METRICS_INCLUDE_WEBHOOK_METRICS=true
+      - N8N_METRICS_INCLUDE_WORKFLOW_METRICS=true
+      - N8N_METRICS_INCLUDE_NODE_METRICS=true
+      # Execuções
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
-      - WEBHOOK_URL=http://localhost:5678/
+      - EXECUTIONS_MODE=regular
+      # Timezone
       - GENERIC_TIMEZONE=America/Sao_Paulo
-      - N8N_METRICS=true  # Ativa o sistema de métricas
-      - N8N_METRICS_INCLUDE_DEFAULT_METRICS=true  # Expõe métricas padrão do n8n
+      # Logs
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=console
+      # Features
+      - N8N_PERSONALIZATION_ENABLED=true
+      - N8N_DIAGNOSTICS_ENABLED=true
     ports:
       - "5678:5678"
     volumes:
@@ -120,24 +136,14 @@ services:
       - ./configs/n8n:/etc/n8n
     networks:
       - sysflow-network
-
-  # Monitoramento de containers 
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
-    container_name: sysflow-cadvisor
-    restart: unless-stopped
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    devices:
-      - /dev/kmsg
-    ports:
-      - "8080:8080"
-    networks:
-      - sysflow-network
+    depends_on:
+      - timescaledb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # Métricas de host 
   node-exporter:
