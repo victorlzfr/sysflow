@@ -1,0 +1,12 @@
+{
+  "executions": {
+    "data": {
+      "prune": true,
+      "maxAge": 168
+    }
+  },
+  "externalHooksFiles": "/etc/n8n/external-hooks.js",
+  "generic": {
+    "timezone": "America/Sao_Paulo"
+  }
+}

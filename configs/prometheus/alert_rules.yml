@@ -1,0 +1,69 @@
+# configs/prometheus/alert_rules.yml
+groups:
+  - name: api_integration_alerts
+    rules:
+      # Alerta para API fora do ar
+      - alert: APIIntegrationDown
+        expr: up{job="fastapi"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          integration: "sysflow-api"
+        annotations:
+          summary: "API SysFlow está fora do ar"
+          description: "A API FastAPI do SysFlow está inacessível há mais de 1 minuto."
+      
+      # Alerta para n8n fora do ar
+      - alert: N8NServiceDown
+        expr: up{job="n8n"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          integration: "n8n"
+        annotations:
+          summary: "Serviço n8n está fora do ar"
+          description: "O n8n não está respondendo às requisições de health check."
+      
+      # Alerta para alta latência de API (exemplo)
+      - alert: APIHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="external-api"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          integration: "external-api"
+        annotations:
+          summary: "Alta latência na API externa"
+          description: "Latência do 95º percentil está acima de 2 segundos por mais de 5 minutos."
+      
+      # Alerta para taxa de erro em APIs
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{status=~"5..", job="external-api"}[5m]) / rate(http_requests_total{job="external-api"}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          integration: "external-api"
+        annotations:
+          summary: "Alta taxa de erro na API"
+          description: "Mais de 5% das requisições estão retornando erro 5xx nos últimos 2 minutos."
+
+  - name: infrastructure_alerts
+    rules:
+      # Alerta para uso alto de CPU
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso alto de CPU no host {{ $labels.instance }}"
+          description: "CPU está acima de 80% por mais de 5 minutos."
+      
+      # Alerta para memória baixa
+      - alert: LowMemory
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Memória disponível baixa em {{ $labels.instance }}"
+          description: "Menos de 10% de memória disponível por mais de 5 minutos."

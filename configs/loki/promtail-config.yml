@@ -36,9 +36,7 @@ scrape_configs:
           __path__: /var/log/sysflow/*.log
           host: localhost
     pipeline_stages:
-    # Regex simples para capturar [INFO], [ERROR], etc
-    - regex:
-        expression: '\[(?P<level>\w+)\]'
-    # Labels CORRETO: apenas "level:" sem source:
-    - labels:
-        level:
+      - regex:
+          expression: '\[(?P<level>\w+)\]'
+      - labels:
+          level:
