@@ -9,22 +9,21 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # APENAS logs do n8n - nada mais
-  - job_name: n8n
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        refresh_interval: 5s
-        filters:
-          - name: label
-            values: ["com.docker.compose.service=n8n"]
-    relabel_configs:
-      - source_labels: [__meta_docker_container_name]
-        target_label: container
-      - target_label: job
-        replacement: n8n
-      - target_label: service  
-        replacement: beuni-automation
-      - source_labels: [__meta_docker_container_id]
-        target_label: container_id
-      - replacement: /var/lib/docker/containers/${container_id}/${container_id}-json.log
-        target_label: __path__
+  # 1. Logs Docker - TODOS os containers
+  - job_name: docker
+    static_configs:
+      - targets: ['localhost']
+        labels:
+          job: 'docker-logs'
+          host: 'localhost'
+          environment: 'sysflow'
+        __path__: /var/lib/docker/containers/*/*-json.log
+
+  # 2. Logs do sistema (opcional)
+  - job_name: system
+    static_configs:
+      - targets: ['localhost']
+        labels:
+          job: 'system-logs'
+          host: 'localhost'
+        __path__: /var/log/*.log
