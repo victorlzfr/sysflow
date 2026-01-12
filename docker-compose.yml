@@ -16,6 +16,9 @@ services:
       - POSTGRES_DB=sysflow
       - POSTGRES_USER=sysflow_admin
       - POSTGRES_PASSWORD=${TIMESCALEDB_PASSWORD}
+      - POSTGRES_LOG_STATEMENT=all  # Loga todas as queries
+      - POSTGRES_LOG_TIMEZONE=UTC
+      - POSTGRESQL_LOG_MIN_DURATION_STATEMENT=0  # Loga todas as queries independente do tempo
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     ports:
