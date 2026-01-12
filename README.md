@@ -1,23 +1,14 @@
-# SysFlow - Plataforma de Observabilidade Self-Hosted
+# SysFlow - Observabilidade para Logística e Automação
 
 ## Visão Geral
-SysFlow é uma stack completa de observabilidade auto-hospedada para monitoramento de infraestrutura e aplicações. A solução implementa coleta, armazenamento e visualização unificada de métricas e logs em tempo real.
+SysFlow é uma stack completa de observabilidade auto-hospedada focada em monitoramento de integrações APIs e automação, desenvolvida para casos de uso de logística. A solução implementa coleta, alertas e visualização unificada com pipeline completo até notificações no Slack.
 
-## Arquitetura
-A plataforma é composta por 7 serviços Docker orquestrados:
-
-### Armazenamento e Processamento
-- **TimescaleDB**: Armazenamento de métricas de longo prazo
-- **Prometheus**: Coleta e armazenamento de métricas
-- **Loki**: Agregação e indexação de logs
-
-### Coleta de Dados
-- **Promtail**: Coletor de logs com parsing automático
-- **Node Exporter**: Métricas do sistema host
-- **cAdvisor**: Métricas de containers Docker
-
-### Visualização
-- **Grafana**: Dashboards unificados com provisionamento automático
+## Stack Atual
+- **Monitoramento**: Prometheus, Alertmanager, Node Exporter, cAdvisor
+- **Logs**: Loki + Promtail
+- **Visualização**: Grafana com dashboards provisionados
+- **Automação**: n8n integrado para processamento de alertas
+- **Armazenamento**: TimescaleDB para métricas históricas
 
 ## Instalação
 ```bash
@@ -25,64 +16,30 @@ git clone https://github.com/victorlzfr/sysflow.git
 cd sysflow
 docker-compose up -d
 ```
+
 ## Acessos
-- **Grafana**: http://localhost:3000 (usuário: admin, senha: admin123)
-
+- **Grafana**: http://localhost:3000 (admin/admin123)
 - **Prometheus**: http://localhost:9090
+- **Alertmanager**: http://localhost:9093
+- **n8n**: http://localhost:5678
 
-- **Loki**: http://localhost:3100 (API-only)
+## Pipeline de Alertas
+Prometheus → Alertmanager → n8n (webhook) → Slack
 
-- **cAdvisor**: http://localhost:8080
-
-## Dashboards
-
-### Dashboard de Métricas (UID: sysflow-metrics)
-- CPU, memória e uso de disco do host
-
-- Métricas de containers por nome
-
-- Filtros dinâmicos por instância
-
-### Dashboard de Logs (UID: sysflow-logs)
-- Visualização de logs em tempo real
-
-- Parsing automático de níveis (INFO, ERROR, DEBUG)
-
-- Taxa de logs e contagem por nível
-
-- Filtros por job e nível de log
-
-## Configuração
-A stack é totalmente configurável via arquivos no diretório configs/:
-```bash
-configs/grafana/provisioning/datasources/: Fontes de dados (Prometheus, Loki)
-
-configs/grafana/provisioning/dashboards/: Definições dos dashboards
-
-configs/prometheus/prometheus.yml: Configuração de scrape do Prometheus
-
-configs/loki/promtail-config.yml: Pipeline de coleta de logs
-```
-## Extensibilidade
-Para monitorar uma nova aplicação:
-
-1) Adicione um novo job no prometheus.yml
-
-2) Configure o Promtail para coletar os logs da aplicação
-
-3) Estenda os dashboards existentes ou crie novos
+## Caso de Uso: Beuni (Logística)
+Monitoramento de integrações entre APIs de estoque e ERP, com alertas proativos para falhas de sincronização e dashboard NOC unificado.
 
 ## Roadmap
-- Implementação de alertas com Alertmanager
+- [x] Stack básica de observabilidade
+- [x] Integração n8n para automação de alertas
+- [x] Pipeline completo até Slack
+- [ ] Dashboard NOC com KPIs de logística
+- [ ] API FastAPI para métricas customizadas
+- [ ] Monitoramento de APIs externas
 
-- Métricas de aplicações personalizadas
+## Configuração
+Toda stack é configurável via arquivos no diretório `configs/`: alertmanager, grafana, loki, n8n, prometheus.
 
-- Autenticação externa no Grafana (OAuth/SSO)
+## Tecnologias
+Docker Compose, Prometheus, Grafana, Loki, n8n, TimescaleDB, Alertmanager, Slack.
 
-- Backup e restore automatizado
-
-- Monitoramento de banco de dados TimescaleDB
-
-- Agente escrito em Go
-
-- API em Python/FastAPI
