@@ -9,27 +9,22 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  # 1. Logs do sistema (funciona)
-  - job_name: system
-    static_configs:
-      - targets: [localhost]
-        labels:
-          job: varlogs
-          __path__: /var/log/*.log
-
-  # 2. Logs de TODOS os containers Docker (genérico e necessário)
-  - job_name: containerlogs
-    static_configs:
-      - targets: [localhost]
-        labels:
-          job: containerlogs
-          __path__: /var/lib/docker/containers/*/*.log
-
-  # 3. Logs ESPECÍFICOS do n8n (VERSÃO SIMPLIFICADA - SEM PIPELINE_STAGES)
-  - job_name: n8n-specific
-    static_configs:
-      - targets: [localhost]
-        labels:
-          job: n8n
-          service: beuni-automation
-          __path__: /var/lib/docker/containers/*/*-json.log
+  # APENAS logs do n8n - nada mais
+  - job_name: n8n
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.service=n8n"]
+    relabel_configs:
+      - source_labels: [__meta_docker_container_name]
+        target_label: container
+      - target_label: job
+        replacement: n8n
+      - target_label: service  
+        replacement: beuni-automation
+      - source_labels: [__meta_docker_container_id]
+        target_label: container_id
+      - replacement: /var/lib/docker/containers/${container_id}/${container_id}-json.log
+        target_label: __path__
