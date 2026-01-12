@@ -1,6 +1,13 @@
-# docker-compose.yml 
+# ===================================================================
+# NOC BEUNI - PROVA DE CONCEITO (PoC) PARA O CENTRO DE OPERAÇÕES
+# ===================================================================
+# Objetivo: Demonstrar uma stack de observabilidade mínima e funcional
+# para monitorar integrações críticas e saúde de sistemas, provando a
+# capacidade de adaptação rápida aos KPIs reais do negócio.
+# ===================================================================
+
 services:
-  # Banco de dados principal (métricas de longo prazo/status)
+  # [1] ARMAZENAMENTO DE LONGO PRAZO (Base para métricas históricas e tendências)
   timescaledb:
     image: timescale/timescaledb-ha:pg16
     container_name: sysflow-timescaledb
@@ -16,6 +23,7 @@ services:
     networks:
       - sysflow-network
 
+  # [2] COLETA E AGREGAÇÃO DE DADOS (Coração da Observabilidade)
   # Coleta de métricas
   prometheus:
     image: prom/prometheus:latest
@@ -32,7 +40,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.enable-lifecycle'
 
-  # Gerenciamento de alertas
+  # Gerenciamento inteligente de alertas
   alertmanager:
     image: prom/alertmanager:latest
     container_name: sysflow-alertmanager
@@ -46,26 +54,7 @@ services:
     depends_on:
       - prometheus
 
-  # Visualização
-  grafana:
-    image: grafana/grafana-enterprise:latest
-    container_name: sysflow-grafana
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./configs/grafana/provisioning:/etc/grafana/provisioning
-      - grafana_data:/var/lib/grafana
-    networks:
-      - sysflow-network
-    depends_on:
-      - prometheus
-      - loki
-
-  # Log aggregation
+  # Agregação de logs (para troubleshooting integrado)
   loki:
     image: grafana/loki:2.9.0
     container_name: sysflow-loki
@@ -93,40 +82,55 @@ services:
     depends_on:
       - loki
 
-  # Automação/Integração
+  # [3] VISUALIZAÇÃO - PAINEL ÚNICO DO NOC (Single Pane of Glass)
+  grafana:
+    image: grafana/grafana-enterprise:latest
+    container_name: sysflow-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    networks:
+      - sysflow-network
+    depends_on:
+      - prometheus
+      - loki
+
+  # [4] AUTOMAÇÃO E RESPOSTA A INCIDENTES (Orquestração de Alertas)
   n8n:
     image: n8nio/n8n:latest
     container_name: sysflow-n8n
     restart: unless-stopped
     environment:
-      # Autenticação
+      # Autenticação e Configuração Básica
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=${N8N_PASSWORD}
-      # Segurança
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      # Configuração do servidor
       - N8N_PROTOCOL=http
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - WEBHOOK_URL=http://localhost:5678/
-      # Configuração de métricas (HABILITADAS)
+      # Métricas Expostas (Para Auto-monitoramento da Stack)
       - N8N_METRICS=true
       - N8N_METRICS_INCLUDE_DEFAULT_METRICS=true
       - N8N_METRICS_INCLUDE_API_METRICS=true
       - N8N_METRICS_INCLUDE_WEBHOOK_METRICS=true
       - N8N_METRICS_INCLUDE_WORKFLOW_METRICS=true
       - N8N_METRICS_INCLUDE_NODE_METRICS=true
-      # Execuções
+      # Configurações de Execução
       - EXECUTIONS_DATA_PRUNE=true
       - EXECUTIONS_DATA_MAX_AGE=168
       - EXECUTIONS_MODE=regular
-      # Timezone
+      # Localização e Logs
       - GENERIC_TIMEZONE=America/Sao_Paulo
-      # Logs
       - N8N_LOG_LEVEL=info
       - N8N_LOG_OUTPUT=console
-      # Features
       - N8N_PERSONALIZATION_ENABLED=true
       - N8N_DIAGNOSTICS_ENABLED=true
     ports:
@@ -139,13 +143,14 @@ services:
     depends_on:
       - timescaledb
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5678/healthz"]
+      test: ["CMD", "sh", "-c", "wget -q -T 5 -O - http://127.0.0.1:5678/healthz 2>&1 | grep -qF '{\"status\":\"ok\"}'"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 30s
 
-  # Métricas de host 
+  # [5] MONITORAMENTO DE INFRAESTRUTURA (Escalável para ambientes maiores)
+  # Métricas do Host/Servidor
   node-exporter:
     image: prom/node-exporter:latest
     container_name: sysflow-node-exporter
@@ -161,6 +166,21 @@ services:
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
     ports:
       - "9100:9100"
+    networks:
+      - sysflow-network
+
+  # Métricas por Container (Detalhamento de recursos)
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: sysflow-cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
     networks:
       - sysflow-network
 
