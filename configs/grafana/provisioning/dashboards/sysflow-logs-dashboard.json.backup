@@ -37,10 +37,7 @@
         "showTime": true,
         "wrapLogMessage": true,
         "showLabels": false,
-        "enableLogDetails": true,
-        "prettifyLogMessage": false,
-        "sortOrder": "Descending",
-        "dedupStrategy": "none"
+        "enableLogDetails": true
       },
       "gridPos": {
         "h": 12,
@@ -56,7 +53,7 @@
       "datasource": "Loki",
       "targets": [
         {
-          "expr": "sum(rate({job=~\"$job\", level=~\"$level\"}[1m]))",
+          "expr": "rate({job=~\"$job\", level=~\"$level\"}[5m])",
           "refId": "A"
         }
       ],
@@ -74,7 +71,7 @@
       "datasource": "Loki",
       "targets": [
         {
-          "expr": "sum(rate({job=\"n8n\", level=~\"$level\"}[1m]))",
+          "expr": "rate({job=\"sysflow\"}[5m])",
           "refId": "A"
         }
       ],
@@ -92,7 +89,7 @@
       "datasource": "Loki",
       "targets": [
         {
-          "expr": "count_over_time({job=~\"$job\", level=~\"$level\"}[2m]) by (level)",
+          "expr": "count_over_time({job=~\"$job\", level=~\"$level\"}[5m])",
           "refId": "A"
         }
       ],
@@ -132,17 +129,16 @@
               }
             ]
           },
-          "unit": "short",
-          "displayName": "${__field.labels.level}"
+          "unit": "short"
         }
       }
     }
   ],
   "time": {
-    "from": "now-15m",
+    "from": "now-4h",
     "to": "now"
   },
-  "refresh": "30s",
+  "refresh": "5s",
   "templating": {
     "list": [
       {
@@ -159,8 +155,13 @@
         "options": [
           {
             "selected": true,
-            "text": "n8n",
-            "value": "n8n"
+            "text": "sysflow",
+            "value": "sysflow"
+          },
+          {
+            "selected": false,
+            "text": "varlogs",
+            "value": "varlogs"
           },
           {
             "selected": false,
@@ -168,7 +169,7 @@
             "value": "containerlogs"
           }
         ],
-        "query": "n8n,containerlogs",
+        "query": "sysflow,varlogs,containerlogs",
         "type": "custom",
         "datasource": "Loki"
       },
@@ -184,7 +185,7 @@
         "multi": true,
         "name": "level",
         "options": [],
-        "query": "label_values({job=\"n8n\"}, level)",
+	"query": "label_values(level)",
         "queryType": "labelValues",
         "refresh": 1,
         "regex": "",
