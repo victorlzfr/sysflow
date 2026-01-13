@@ -13,7 +13,6 @@ services:
     container_name: sysflow-timescaledb
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
       - POSTGRES_DB=sysflow
       - POSTGRES_USER=sysflow_admin
       - POSTGRES_PASSWORD=${TIMESCALEDB_PASSWORD}
@@ -93,7 +92,6 @@ services:
     container_name: sysflow-grafana
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
     ports:
       - "3000:3000"
@@ -112,7 +110,6 @@ services:
     container_name: sysflow-n8n
     restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
       # Autenticação e Configuração Básica
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=admin
@@ -199,3 +196,6 @@ volumes:
   loki_data:
   grafana_data:
   n8n_data:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    environment:
